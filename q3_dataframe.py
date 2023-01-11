@@ -64,10 +64,10 @@ q3.select(q3.window.start.cast("string").alias("start"),q3.window.end.cast("stri
 
 
 ############################Q4##########################
-q4=df_taxis.withColumn("Hours",hour("tpep_pickup_datetime")).withColumn("Days",date_format("tpep_pickup_datetime","E")).groupBy("Days","Hours").agg(max("passenger_count").alias("passengers"))
-w = Window.partitionBy("Days").orderBy(desc("passengers"))
-q4 = q4.withColumn("rn", row_number().over(w)).filter("rn <= 3")
-q4.select("Hours","Days","passengers").show()
+#q4=df_taxis.withColumn("Hours",hour("tpep_pickup_datetime")).withColumn("Days",date_format("tpep_pickup_datetime","E")).groupBy("Days","Hours").agg(max("passenger_count").alias("passengers"))
+#w = Window.partitionBy("Days").orderBy(desc("passengers"))
+#q4 = q4.withColumn("rn", row_number().over(w)).filter("rn <= 3")
+#q4.select("Hours","Days","passengers").show()
 
 
 
@@ -78,11 +78,11 @@ q4.select("Hours","Days","passengers").show()
 print("======================================================================")
 
 #################Q5############
-df=df_taxis.withColumn("sub",(df_taxis["fare_amount"]/df_taxis["tip_amount"])).withColumn("Month",month("tpep_pickup_datetime")).withColumn("Day",dayofmonth("tpep_pickup_datetime"))
-df=df.na.drop(subset=["sub"])
-w = Window.partitionBy("Month").orderBy(desc("sub"))
-df = df.withColumn("rn", row_number().over(w)).filter("rn <= 3")
-df.select("Month","Day","rn","sub").show()
+#df=df_taxis.withColumn("sub",(df_taxis["fare_amount"]/df_taxis["tip_amount"])).withColumn("Month",month("tpep_pickup_datetime")).withColumn("Day",dayofmonth("tpep_pickup_datetime"))
+#df=df.na.drop(subset=["sub"])
+#w = Window.partitionBy("Month").orderBy(desc("sub"))
+#df = df.withColumn("rn", row_number().over(w)).filter("rn <= 3")
+#df.select("Month","Day","rn","sub").show()
 #######################Q5###########
 
 #.agg(avg("sub").alias("final")).orderBy(desc("final")).select("Day","final").show(5)

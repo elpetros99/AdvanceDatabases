@@ -24,4 +24,4 @@ df_taxis.show(10)
 
 print("extra")
 df.printSchema()
-df.show()
+df.show(10)

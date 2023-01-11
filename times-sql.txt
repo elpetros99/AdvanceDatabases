@@ -1,0 +1,3 @@
+Time elapsed for q4 is 24.8842 sec.
+Time elapsed for q4 is 25.0474 sec.
+Time elapsed for q4 is 20.3639 sec.

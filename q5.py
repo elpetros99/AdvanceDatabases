@@ -55,19 +55,19 @@ print("extra")
 
 #remove rows with same arrival and destination
 
-q3=df_taxis
-cols = ['PULocationID', 'DOLocationID']
-q3=q3.withColumn('arr', array_sort(array(*cols))).drop_duplicates(['arr']).drop('arr')
-q3 = q3.groupBy(window("tpep_pickup_datetime", "15 days")).agg(avg("trip_distance").alias("distance"),avg("fare_amount").alias("cost"))
-q3.select(q3.window.start.cast("string").alias("start"),q3.window.end.cast("string").alias("end"),"distance","cost").show()
+#q3=df_taxis
+#cols = ['PULocationID', 'DOLocationID']
+#q3=q3.withColumn('arr', array_sort(array(*cols))).drop_duplicates(['arr']).drop('arr')
+#q3 = q3.groupBy(window("tpep_pickup_datetime", "15 days")).agg(avg("trip_distance").alias("distance"),avg("fare_amount").alias("cost"))
+#q3.select(q3.window.start.cast("string").alias("start"),q3.window.end.cast("string").alias("end"),"distance","cost").show()
 ###########Q3##################
 
 
 ############################Q4##########################
-q4=df_taxis.withColumn("Hours",hour("tpep_pickup_datetime")).withColumn("Days",date_format("tpep_pickup_datetime","E")).groupBy("Days","Hours").agg(max("passenger_count").alias("passengers"))
-w = Window.partitionBy("Days").orderBy(desc("passengers"))
-q4 = q4.withColumn("rn", row_number().over(w)).filter("rn <= 3")
-q4.select("Hours","Days","passengers").show()
+#q4=df_taxis.withColumn("Hours",hour("tpep_pickup_datetime")).withColumn("Days",date_format("tpep_pickup_datetime","E")).groupBy("Days","Hours").agg(max("passenger_count").alias("passengers"))
+#w = Window.partitionBy("Days").orderBy(desc("passengers"))
+#q4 = q4.withColumn("rn", row_number().over(w)).filter("rn <= 3")
+#q4.select("Hours","Days","passengers").show()
 
 
 
