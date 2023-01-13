@@ -78,10 +78,10 @@ rdd = df_taxis2.rdd
 rdd = rdd.filter(lambda x: x.day == 40)
 
 
-rdd = rdd.filter(lambda x: x.PULocationID is not x.DOLocationID).map(lambda x: (x.tpep_pickup_datetime.dayofyear, x.trip_distance, x.total_amount))
-#.map(lambda x: (floor(x[0].day/15), x[1], x[2]))
+rdd = rdd.filter(lambda x: x.PULocationID is not x.DOLocationID).map(lambda x: (x.day, x.trip_distance, x.total_amount))
+#.map(lambda x: (floor(x[0]/15), x[1], x[2]))
 
-#rdd = rdd.groupByKey().mapValues(lambda x: (sum(x[0])/len(x[0]), sum(x[1])/len(x[1])))
+rdd = rdd.groupByKey().mapValues(lambda x: (sum(x[0])/len(x[0]), sum(x[1])/len(x[1])))
 #i = 0
 for y in rdd.collect():
    print(y)
