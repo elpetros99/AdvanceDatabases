@@ -5,6 +5,7 @@ import sys
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import Window
+from time import time
 
 
 os.environ['PYSPARK_PYTHON'] = sys.executable
@@ -18,8 +19,8 @@ spark = SparkSession.builder.master("spark://192.168.0.2:7077").getOrCreate()
 print("spark session created")
 
 #read a sample input file in CSV format from local disk
-df_zone = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("datasets/extra/zone.csv")
-df_taxis=spark.read.parquet("datasets/taxis/")
+df_zone = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("hdfs://master:9000/datasets/extra/zone.csv")
+df_taxis=spark.read.parquet("hdfs://master:9000/datasets/taxis/")
 
 #print("Taxis")
 #df_taxis.printSchema()
@@ -61,13 +62,20 @@ df_taxis=spark.read.parquet("datasets/taxis/")
 #########################################################
 #join the dfs
 
+start_time = time()
 df_taxis2 = df_taxis.withColumn("month", month("tpep_pickup_datetime"))
 PUjoin = df_taxis2.join(df_zone,df_taxis2.PULocationID==df_zone.LocationID)
 df_zone2 = df_zone.withColumnRenamed("LocationID", "LocationID2").withColumnRenamed("Borough", "Borough2").withColumnRenamed("Zone", "Zone2").withColumnRenamed("service_zone", "service_zone2")
 
 big_df = PUjoin.join(df_zone2, PUjoin.DOLocationID==df_zone2.LocationID2)
+q1 = big_df.select("PULocationID", "Zone", "DOLocationID", "Zone2", "tip_amount").filter((col("month") == 3) & (col("Zone2") == "Battery Park")).orderBy(desc("tip_amount")).collect()
+end_time = time()
+elapsed_time = end_time - start_time
+print("Elapsed time: "+ str(elapsed_time) + " seconds. ")
 
 
 
 ############## Q1 ################################################################
 q1 = big_df.select("PULocationID", "Zone", "DOLocationID", "Zone2", "tip_amount").filter((col("month") == 3) & (col("Zone2") == "Battery Park")).orderBy(desc("tip_amount")).show(1)
+print("Elapsed time: "+ str(elapsed_time) + " seconds. ")
+

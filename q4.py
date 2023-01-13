@@ -5,6 +5,7 @@ import sys, time
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import Window
+from time import time
 
 os.environ['PYSPARK_PYTHON'] = sys.executable
 os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
@@ -17,8 +18,8 @@ spark = SparkSession.builder.master("spark://192.168.0.2:7077").appName("q4").ge
 print("spark session created")
 
 #read a sample input file in CSV format from local disk
-df = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("datasets/extra/zone.csv")
-df_taxis=spark.read.parquet("datasets/taxis/")
+df = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("hdfs://master:9000/datasets/extra/zone.csv")
+df_taxis=spark.read.parquet("hdfs://master:9000/datasets/taxis/")
 
 print("Taxis")
 #df_taxis.printSchema()
@@ -62,14 +63,17 @@ print("extra")
 #q3.select(q3.window.start.cast("string").alias("start"),q3.window.end.cast("string").alias("end"),"distance","cost").show()
 ###########Q3##################
 
-start_time = time.time()
+start_time = time()
 ############################Q4##########################
 q4=df_taxis.withColumn("Hours",hour("tpep_pickup_datetime")).withColumn("Days",date_format("tpep_pickup_datetime","E")).groupBy("Days","Hours").agg(max("passenger_count").alias("passengers"))
 w = Window.partitionBy("Days").orderBy(desc("passengers"))
 q4 = q4.withColumn("rn", row_number().over(w)).filter("rn <= 3")
 q4.select("Hours","Days","passengers").collect()
 
-fin_time = time.time()
+fin_time = time()
+
+q4.select("Hours","Days","passengers","rn").show()
+
 
 msg="Time elapsed for q4 is %.4f sec.\n" % (fin_time-start_time) 
 print(msg)

@@ -5,6 +5,7 @@ import sys
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import Window
+from time import time
 
 os.environ['PYSPARK_PYTHON'] = sys.executable
 os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
@@ -17,8 +18,8 @@ spark = SparkSession.builder.master("spark://192.168.0.2:7077").getOrCreate()
 print("spark session created")
 
 #read a sample input file in CSV format from local disk
-df = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("datasets/extra/zone.csv")
-df_taxis=spark.read.parquet("datasets/taxis/")
+df = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("hdfs://master:9000/datasets/extra/zone.csv")
+df_taxis=spark.read.parquet("hdfs://master:9000/datasets/taxis/")
 
 print("Taxis")
 #df_taxis.printSchema()
@@ -54,12 +55,19 @@ print("extra")
 ###########Q3##################
 
 #remove rows with same arrival and destination
-
+start_time = time()
 q3=df_taxis
 cols = ['PULocationID', 'DOLocationID']
 q3=q3.withColumn('arr', array_sort(array(*cols))).drop_duplicates(['arr']).drop('arr')
 q3 = q3.groupBy(window("tpep_pickup_datetime", "15 days")).agg(avg("trip_distance").alias("distance"),avg("fare_amount").alias("cost"))
+q3.select(q3.window.start.cast("string").alias("start"),q3.window.end.cast("string").alias("end"),"distance","cost").collect()
+end_time = time()
+elapsed_time = end_time - start_time
+
+
+
 q3.select(q3.window.start.cast("string").alias("start"),q3.window.end.cast("string").alias("end"),"distance","cost").show()
+print("Elapsed time: " +str(elapsed_time) +" seconds")
 ###########Q3##################
 
 

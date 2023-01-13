@@ -5,6 +5,7 @@ import sys
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import Window
+from time import time
 
 
 os.environ['PYSPARK_PYTHON'] = sys.executable
@@ -18,8 +19,8 @@ spark = SparkSession.builder.master("spark://192.168.0.2:7077").getOrCreate()
 print("spark session created")
 
 #read a sample input file in CSV format from local disk
-df_zone = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("datasets/extra/zone.csv")
-df_taxis=spark.read.parquet("datasets/taxis/")
+df_zone = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("hdfs://master:9000/datasets/extra/zone.csv")
+df_taxis=spark.read.parquet("hdfs://master:9000/datasets/taxis/")
 
 #print("Taxis")
 #df_taxis.printSchema()
@@ -57,7 +58,7 @@ df_taxis=spark.read.parquet("datasets/taxis/")
 # |-- service_zone: string (nullable = true)
 
 
-
+start_time = time()
 df_taxis2 = df_taxis.withColumn("month", month("tpep_pickup_datetime"))
 PUjoin = df_taxis2.join(df_zone,df_taxis2.PULocationID==df_zone.LocationID)
 df_zone2 = df_zone.withColumnRenamed("LocationID", "LocationID2").withColumnRenamed("Borough", "Borough2").withColumnRenamed("Zone", "Zone2").withColumnRenamed("service_zone", "service_zone2")
@@ -73,7 +74,13 @@ max_tolls_per_month = big_df.filter(col("tolls_amount") != "0.0").groupBy("month
 
 combined = max_tolls_per_month.join(big_df, (big_df.month==max_tolls_per_month.month2) & (big_df.tolls_amount==max_tolls_per_month.max_tolls_amount))
 
+combined.select("PULocationID","Zone", "DOLocationID", "Zone2", "month", "max_tolls_amount").orderBy(asc("month")).collect()
+end_time = time()
+
+print("Elapsed time: "+ str(elapsed_time)+ " seconds")
+
 combined.select("PULocationID","Zone", "DOLocationID", "Zone2", "month", "max_tolls_amount").orderBy(asc("month")).show()
+print("Elapsed time: "+ str(elapsed_time)+ " seconds")
 
 ##################################################################################
 

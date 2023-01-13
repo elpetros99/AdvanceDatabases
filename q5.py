@@ -5,6 +5,7 @@ import sys
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import Window
+from time import time
 
 os.environ['PYSPARK_PYTHON'] = sys.executable
 os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
@@ -17,8 +18,8 @@ spark = SparkSession.builder.master("spark://192.168.0.2:7077").getOrCreate()
 print("spark session created")
 
 #read a sample input file in CSV format from local disk
-df = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("datasets/extra/zone.csv")
-df_taxis=spark.read.parquet("datasets/taxis/")
+df = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("hdfs://master:9000/datasets/extra/zone.csv")
+df_taxis=spark.read.parquet("hdfs://master:9000/datasets/taxis/")
 
 print("Taxis")
 #df_taxis.printSchema()
@@ -78,12 +79,19 @@ print("extra")
 print("======================================================================")
 
 #################Q5############
+start_time = time()
 df=df_taxis.withColumn("sub",(df_taxis["fare_amount"]/df_taxis["tip_amount"])).withColumn("Month",month("tpep_pickup_datetime")).withColumn("Day",dayofmonth("tpep_pickup_datetime"))
 df=df.na.drop(subset=["sub"])
 w = Window.partitionBy("Month").orderBy(desc("sub"))
-df = df.withColumn("rn", row_number().over(w)).filter("rn <= 3")
-df.select("Month","Day","rn","sub").show()
+df = df.withColumn("rn", row_number().over(w)).filter("rn <= 5")
+df.select("Month","Day","rn","sub").collect()
 #######################Q5###########
+end_time = time()
+elapsed_time = end_time - start_time
+
+df.select("Month","Day","rn","sub").show()
+print("Elapsed time: " +str(elapsed_time) +" seconds")
+
 
 #.agg(avg("sub").alias("final")).orderBy(desc("final")).select("Day","final").show(5)
 print("======================================================================")
