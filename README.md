@@ -7,5 +7,5 @@ Requirements:
 
 Instructions to replicate:
 1. Git Clone our project to your prefeered destination
-2. Add datasets folder to the HDFS(Handoop) with command hdfs dfs -put datasets
+2. Add datasets folder to the HDFS(Handoop) with command "hdfs dfs -put datasets"
 3. Run the command "spark-submit query.py --deploy_mode cluster" where query is the filename of the query you want to run.
