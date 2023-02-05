@@ -1,8 +1,0 @@
-Time elapsed for q4 is 24.8842 sec.
-Time elapsed for q4 is 25.0474 sec.
-Time elapsed for q4 is 20.3639 sec.
-Time elapsed for q4 is 20.4160 sec.
-Time elapsed for q4 is 21.0817 sec.
-Time elapsed for q4 is 20.8852 sec.
-Time elapsed for q4 is 22.5284 sec.
-Time elapsed for q4 is 21.9457 sec.
