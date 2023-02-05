@@ -19,8 +19,8 @@ spark = SparkSession.builder.master("spark://192.168.0.2:7077").getOrCreate()
 print("spark session created")
 
 #read a sample input file in CSV format from local disk
-df_zone = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("hdfs://master:9000/datasets/extra/zone.csv")
-df_taxis=spark.read.parquet("hdfs://master:9000/datasets/taxis/")
+df_zone = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("datasets/extra/zone.csv")
+df_taxis=spark.read.parquet("datasets/taxis/")
 
 #print("Taxis")
 #df_taxis.printSchema()

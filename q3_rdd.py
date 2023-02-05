@@ -2,10 +2,12 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, sum, desc, row_number, asc, max, month, dayofmonth, hour, dayofyear, floor
 import os
 import sys
+import datetime
+import math
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import Window
-
+from time import time
 
 os.environ['PYSPARK_PYTHON'] = sys.executable
 os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
@@ -18,8 +20,12 @@ spark = SparkSession.builder.master("spark://192.168.0.2:7077").getOrCreate()
 print("spark session created")
 
 #read a sample input file in CSV format from local disk
-df_zone = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("hdfs://master:9000/datasets/extra/zone.csv")
-df_taxis=spark.read.parquet("hdfs://master:9000/datasets/taxis/")
+df_zone = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("datasets/extra/zone.csv")
+df_taxis=spark.read.parquet("datasets/taxis/")
+
+#Create RDD from external Data source
+#rdd_taxis = spark.sparkContext.parquet("datasets/taxis/")
+#rdd_zone = spark.sparkContext.csv("datasets/extra/zone.csv")
 
 # Taxis Schema
 # |-- VendorID: long (nullable = true)
@@ -49,7 +55,7 @@ df_taxis=spark.read.parquet("hdfs://master:9000/datasets/taxis/")
 # |-- service_zone: string (nullable = true)
 
 
-df_taxis2 = df_taxis.withColumn("day", dayofyear("tpep_pickup_datetime")).select("day", "tpep_pickup_datetime", "trip_distance", "total_amount", "PULocationID", "DOLocationID")
+#df_taxis2 = df_taxis.withColumn("day", dayofyear("tpep_pickup_datetime")).select("day", "tpep_pickup_datetime", "trip_distance", "total_amount", "PULocationID", "DOLocationID")
 #PUjoin = df_taxis2.join(df_zone,df_taxis2.PULocationID==df_zone.LocationID)
 #df_zone2 = df_zone.withColumnRenamed("LocationID", "LocationID2").withColumnRenamed("Borough", "Borough2").withColumnRenamed("Zone", "Zone2").withColumnRenamed("service_zone", "service_zone2")
 
@@ -68,21 +74,55 @@ df_taxis2 = df_taxis.withColumn("day", dayofyear("tpep_pickup_datetime")).select
 
 #combined.select("PULocationID","Zone", "DOLocationID", "Zone2", "month", "max_tolls_amount").orderBy(asc("month")).show()
 
-################# Q3 rdd ######################################################
-#  Row(day=1, tpep_pickup_datetime=datetime.datetime(2022, 1, 1, 23, 45, 25))
-#  (datetime.datetime(2022, 1, 1, 23, 26, 21), 3.0, 22.38)
-#  (9, 1.9, 12.98)
+################# a different (not ideal) version of Q3 rdd #####################################
 
-rdd = df_taxis2.rdd
+#rdd = df_taxis2.rdd
 
-rdd = rdd.filter(lambda x: x.day == 40)
+#rdd = rdd.filter(lambda x: x.PULocationID is not x.DOLocationID).map(lambda x: (x.day, x.trip_distance, x.total_amount))
+
+#rdd = rdd.map(lambda x: (int(x[0]/15), (x[1], x[2], 1)))
 
 
-rdd = rdd.filter(lambda x: x.PULocationID is not x.DOLocationID).map(lambda x: (x.day, x.trip_distance, x.total_amount))
-#.map(lambda x: (floor(x[0]/15), x[1], x[2]))
+#rdd = rdd.reduceByKey(lambda a,b: (a[0]+b[0], a[1]+b[1], a[2]+b[2])).map(lambda x: (x[0], x[1][0]/x[1][2], x[1][1]/x[1][2]))
 
-rdd = rdd.groupByKey().mapValues(lambda x: (sum(x[0])/len(x[0]), sum(x[1])/len(x[1])))
-#i = 0
-for y in rdd.collect():
+
+#for y in rdd.collect():
+#   print(y)
+
+############### the correct version of Q3 rdd with df_taxis #################################
+rdd = df_taxis.rdd
+
+
+start_time = time()
+
+rdd = rdd.filter(lambda x: x.PULocationID is not x.DOLocationID).map(lambda x: (x.tpep_pickup_datetime, x.trip_distance, x.total_amount)).filter(lambda x: x[0].year == 2022)
+
+
+rdd = rdd.map(lambda x: (x[0].toordinal() - datetime.datetime(2022, 1, 1).toordinal(), x[1], x[2]))
+
+
+rdd = rdd.map(lambda x: (int(x[0]/15), (x[1], x[2], 1)))
+
+
+#rdd = rdd.reduceByKey(lambda acc, x: (acc[0] + x[0], acc[1] + x[1], acc[2] + x[2]))
+
+
+#rdd = rdd.map(lambda x: (x[0], x[1][0]/x[1][2], x[1][1]/x[1][2], x[1][2])).sortBy(lambda x: x[0])
+
+
+#group by key has high memory complexity so it dows not fit our purposes-memory exceded
+rdd = rdd.reduceByKey(lambda a,b: (a[0] + b[0], a[1] + b[1], a[2] + b[2]))
+rdd = rdd.map(lambda x: (x[0], x[1][0]/x[1][2], x[1][1]/x[1][2])).sortBy(lambda x: x[0])
+res = rdd.collect()
+
+end_time = time()
+
+elapsed_time = end_time - start_time
+print("Elapsed time: " +str(elapsed_time) +" seconds")
+
+for y in res:
    print(y)
-
+elapsed_time = end_time - start_time
+print("====================================================================")
+print("Elapsed time: " +str(elapsed_time) +" seconds")
+print("====================================================================")

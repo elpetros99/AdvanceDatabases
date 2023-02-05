@@ -18,8 +18,8 @@ spark = SparkSession.builder.master("spark://192.168.0.2:7077").appName("q4").ge
 print("spark session created")
 
 #read a sample input file in CSV format from local disk
-df = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("hdfs://master:9000/datasets/extra/zone.csv")
-df_taxis=spark.read.parquet("hdfs://master:9000/datasets/taxis/")
+df = spark.read.option("header", "true").option("inferSchema", "true").format("csv").csv("datasets/extra/zone.csv")
+df_taxis=spark.read.parquet("datasets/taxis/")
 
 print("Taxis")
 #df_taxis.printSchema()
@@ -72,7 +72,7 @@ q4.select("Hours","Days","passengers").collect()
 
 fin_time = time()
 
-q4.select("Hours","Days","passengers","rn").show()
+q4.select("Hours","Days","passengers","rn").show(22)
 
 
 msg="Time elapsed for q4 is %.4f sec.\n" % (fin_time-start_time) 
